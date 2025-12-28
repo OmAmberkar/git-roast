@@ -2,6 +2,7 @@ import os
 import re
 import json
 import requests
+from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles  # for deployment
@@ -27,7 +28,7 @@ log_to_file("BACKEND_STARTING_UP")
 # Setup CORS to allow requests from Astro frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:4321", "http://127.0.0.1:4321"],
+    # allow_origins=["http://localhost:4321", "http://127.0.0.1:4321", "http://localhost:4322", "http://127.0.0.1:4322", "http://localhost:4323", "http://127.0.0.1:4323"],
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
@@ -218,36 +219,8 @@ async def roast_repo(request: RoastRequest):
         log_to_file(f"DEBUG: HTTP Error {e.status_code}: {e.detail}")
         raise e
     except Exception as e:
-        log_to_file(f"DEBUG: Internal error during roast: {str(e)}")
-        import traceback
-        log_to_file(traceback.format_exc())
-        raise HTTPException(status_code=500, detail="DESTRUCTION_CORE_FAILURE")
-
-
-# mounting the assets folder
-# 1. Mount the 'assets' folder (CSS, JS, Images from Astro build)
-# We check relative to the current file to find the client dist folder
-client_dist = Path(__file__).resolve().parent.parent / "client" / "dist"
-
-if (client_dist / "assets").exists():
-    app.mount("/assets", StaticFiles(directory=str(client_dist / "assets")), name="assets")
-
-# 2. Serve specific static files like favicon, audio, etc. from root
-@app.get("/favicon.svg")
-async def favicon():
-    return FileResponse(client_dist / "favicon.svg")
-
-# 3. Catch-All Route for SPA (Single Page Application)
-# This ensures that if you refresh the page, it serves index.html instead of 404
-@app.get("/{full_path:path}")
-async def serve_spa(full_path: str):
-    # Check if file exists in dist (e.g., audio files)
-    file_path = client_dist / full_path
-    if file_path.exists() and file_path.is_file():
-        return FileResponse(file_path)
-    
-    # Default to index.html for everything else
-    return FileResponse(client_dist / "index.html")
+        log_to_file(f"CRITICAL ERROR: {e}")
+        return {"roast": f"System Crash: {str(e)}", "score": 0}
 
 
 # mounting the assets folder

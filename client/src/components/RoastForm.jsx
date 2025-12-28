@@ -1,33 +1,67 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import './roastForm.css'; // Import the CSS file
+import { motion, AnimatePresence } from 'framer-motion'
 
-/**
- * RoastForm Component
- * An interactive form that mimics a terminal command line interface.
- */
 const RoastForm = () => {
   const [repoUrl, setRepoUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [roastData, setRoastData] = useState(null);
   const [error, setError] = useState(null);
   const [errorCode, setErrorCode] = useState(null);
+  const [view, setView] = useState('input');
 
-  // Audio References
+  const bgAudioRef = useRef(null);
+  const thinkingAudioRef = useRef(null);
+
+  const initAudio = () => {
+    if (!bgAudioRef.current) {
+      bgAudioRef.current = new Audio('/audio/background sound.mp3');
+      bgAudioRef.current.volume = 0.5;
+      bgAudioRef.current.loop = true;
+      bgAudioRef.current.play().catch(e => console.log("Audio waiting for interaction..."));
+    }
+
+    if (!thinkingAudioRef.current) {
+      thinkingAudioRef.current = new Audio('/audio/cyber-10071.mp3');
+      thinkingAudioRef.current.volume = 0.4;
+      thinkingAudioRef.current.loop = true;
+    }
+  };
+
   const playClick = () => {
     const audio = new Audio('/audio/button click 1.mp3');
     audio.volume = 0.5;
-    audio.play().catch(() => {});
+    audio.play().catch(() => { });
   };
 
   const playSuccess = () => {
     const audio = new Audio('/audio/aggressive-tech-cyber-logo-452884.mp3');
     audio.volume = 0.6;
-    audio.play().catch(() => {});
+    audio.play().catch(() => { });
   };
 
   const playError = () => {
-    const audio = new Audio('/audio/button click 2.mp3'); // Heavier click for error
+    const audio = new Audio('/audio/button click 2.mp3');
     audio.volume = 0.5;
-    audio.play().catch(() => {});
+    audio.play().catch(() => { });
+  };
+
+  const switchToThinkingMode = () => {
+    if (bgAudioRef.current) bgAudioRef.current.pause();
+    if (thinkingAudioRef.current) {
+      thinkingAudioRef.current.currentTime = 0;
+      thinkingAudioRef.current.play().catch(() => { });
+    }
+  };
+
+  const switchToNormalMode = () => {
+    if (thinkingAudioRef.current) {
+      thinkingAudioRef.current.pause();
+      thinkingAudioRef.current.currentTime = 0;
+    }
+    if (bgAudioRef.current) {
+      bgAudioRef.current.play().catch(() => { });
+    }
   };
 
   const handleRoast = async (e) => {
@@ -36,18 +70,19 @@ const RoastForm = () => {
 
     playClick();
     setLoading(true);
+    switchToThinkingMode();
+
     setError(null);
     setErrorCode(null);
     setRoastData(null);
 
+    window.dispatchEvent(new CustomEvent('toggle-glitch', { detail: { active: true } }));
+
     try {
-      // const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://127.0.0.1:8001';
-      const apiUrl = import.meta.env.PROD ? '' : 'http://127.0.0.1:8001';
+      const apiUrl = import.meta.env.PUBLIC_API_URL || 'http://127.0.0.1:8001';
       const response = await fetch(`${apiUrl}/api/roast`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ repo_url: repoUrl }),
       });
 
@@ -57,355 +92,171 @@ const RoastForm = () => {
         const detail = errorData.detail || 'UNKNOWN_DESTRUCTION_ERROR';
 
         switch (response.status) {
-          case 404:
-            throw new Error(
-              "I can't roast what I can't see. Is this repo private? My x-ray vision isn't working today."
-            );
-          case 403:
-            throw new Error(
-              'GitHub is tired of my insults. Rate limit hit. Take a break and write better code.'
-            );
-          case 502:
-            throw new Error(
-              "GitHub's servers are cringing too hard at your repo. I couldn't reach them."
-            );
-          default:
-            throw new Error(detail);
+          case 404: throw new Error("I can't roast what I can't see. Is this repo private?");
+          case 403: throw new Error('GitHub is tired of my insults. Rate limit hit.');
+          case 422: throw new Error("This repo is empty or boring. Give me some CODE to destroy.");
+          case 503: throw new Error("SETUP REQUIRED: Change the API Key in server/.env");
+          case 502: throw new Error("GitHub's servers are cringing too hard at your repo.");
+          default: throw new Error(detail);
         }
       }
 
       const data = await response.json();
+
+      if (!data || !data.roast) {
+        throw new Error("Received empty roast from server.");
+      }
+
       setRoastData(data);
+      setView('result');
+
+      switchToNormalMode();
       playSuccess();
+
     } catch (err) {
       setError(err.message);
+      switchToNormalMode();
       playError();
     } finally {
       setLoading(false);
+      window.dispatchEvent(new CustomEvent('toggle-glitch', { detail: { active: false } }));
     }
   };
 
   return (
-    <div className="terminal-container">
-      <form
-        onSubmit={handleRoast}
-        className="cli-form"
-      >
-        <label
-          htmlFor="repo-input"
-          className="cli-prompt"
-        >
-          git-roast:~$
-        </label>
-        <div className="input-wrapper">
-          <input
-            id="repo-input"
-            type="text"
-            value={repoUrl}
-            onChange={(e) => setRepoUrl(e.target.value)}
-            placeholder="enter_github_repo_url..."
-            className="cli-input"
-            autoFocus
-          />
-          <span className="blinking-cursor">_</span>
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className={`glitch-button ${loading ? 'loading' : ''}`}
-        >
-          {loading ? 'ANALYZING_VICTIM...' : 'INITIATE_DESTRUCTION'}
-        </button>
-      </form>
-
-      {error && (
-        <div className="system-alert error-glitch">
-          <div className="alert-header">
-            <span className="alert-icon">⚠</span>
-            <span>CRITICAL_SYSTEM_FAILURE</span>
-            <span className="alert-code">
-              ERR_CODE:{' '}
-              {errorCode || (error?.includes('private') ? '404' : '500_FAIL')}
-            </span>
-          </div>
-          <div className="alert-body">
-            <p
-              className="glitch-text"
-              data-text={error}
+    <div className={`roast-container ${loading ? 'loading' : ''}`}>
+      {loading && (
+        <div className="loading-overlay">
+          <div className="glitch-scanner"></div>
+          <motion.div className="brain-melting-center" animate={{
+            x: [0, -4, 4, -2, 2, 0],
+            y: [0, 3, -3, 2, -2, 0],
+          }}
+            transition={{
+              duration: 0.18,
+              repeat: Infinity,
+            }}>
+            <motion.h2
+              className="overload-text glitch-text"
+              data-text="NEURAL_OVERLOAD_DETECTED"
+              animate={{
+                opacity: [1, 0.85, 1],
+                skewX: [0, -6, 6, 0],
+              }}
+              transition={{
+                duration: 0.25,
+                repeat: Infinity,
+              }}
             >
-              {error}
-            </p>
-          </div>
-          <div className="alert-footer">
-            <span className="scanline"></span>
-            {error.includes('private') && (
-              <p className="hint-text">
-                AUTHENTICATION_REQUIRED: UPGRADE_TOKEN_SCOPES
-              </p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {roastData && (
-        <div className="roast-output fade-in">
-          <div className="report-header">
-            <span className="line"></span>
-            <h3>DESTRUCTION_REPORT</h3>
-            <span className="line"></span>
-          </div>
-          <p className="roast-text">&quot;{roastData.roast}&quot;</p>
-          <div className="score-container">
-            <span className="score-label">LAMENESS_SCORE:</span>
-            <span className="score-value">{roastData.score}</span>
-            <div className="score-bar">
-              <div
-                className="score-fill"
-                style={{ width: `${roastData.score}%` }}
-              ></div>
+              NEURAL_OVERLOAD_DETECTED
+            </motion.h2>
+            <div className="symptoms">
+              <span>SYMPTOMS: CONFUSION, NAUSEA, DISGUST</span>
+              <span>ACTION: BYPASSING_LIMITS.exe</span>
+              <span className="critical">BRAIN_CELLS_REMAINING: 0.003%</span>
+              <span>PROCESSING_LEVEL_OF_LAMENESS: 11/10</span>
             </div>
-          </div>
+            <div className="loading-bar">
+              <div className="loading-fill"></div>
+            </div>
+          </motion.div>
+          <div className="noise-canvas"></div>
         </div>
       )}
 
-      <style>{`
-        .terminal-container {
-          width: 100%;
-          max-width: 650px;
-          padding: 2.5rem;
-          background: rgba(0, 10, 0, 0.9);
-          border: 1px solid #0f0;
-          box-shadow: 0 0 30px rgba(0, 255, 65, 0.15), inset 0 0 10px rgba(0, 255, 65, 0.1);
-          position: relative;
-          overflow: hidden;
-        }
+      <AnimatePresence mode="wait">
+        {!loading && (
+          <motion.div
+            key={view}
+            className={`main-content ${view}`}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.25 }}
+          >
+            {view === 'input' ? (
+              <div className="input-wrapper">
+                <div className="terminal-box">
+                  <div className="terminal-header">
+                    <span className="dot red"></span>
+                    <span className="dot yellow"></span>
+                    <span className="dot cyan"></span>
+                    <span className="title">git-roast --bash</span>
+                  </div>
 
-        .terminal-container::before {
-          content: " ";
-          display: block;
-          position: absolute;
-          top: 0; left: 0; bottom: 0; right: 0;
-          background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-          z-index: 2;
-          background-size: 100% 2px, 3px 100%;
-          pointer-events: none;
-        }
+                  <form onSubmit={handleRoast} className="terminal-form">
+                    <div className="input-row">
+                      <span className="prompt">root@git-roast:~$</span>
+                      <input
+                        id="repo-url"
+                        name="repo-url"
+                        type="text"
+                        value={repoUrl}
+                        onChange={(e) => setRepoUrl(e.target.value)}
+                        onFocus={initAudio}
+                        onClick={initAudio}
+                        placeholder="inject_repo_url_here..."
+                        disabled={loading}
+                        autoFocus
+                      />
+                      {!repoUrl && <span className="blink-cursor">_</span>}
+                    </div>
+                    <motion.button
+                      type="submit"
+                      disabled={loading || !repoUrl}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      {loading ? 'CALCULATING_DESTRUCTION...' : 'EXECUTE_ROAST.sh'}
+                    </motion.button>
+                  </form>
 
-        .cli-form {
-          display: flex;
-          flex-direction: column;
-          gap: 1.5rem;
-          z-index: 3;
-          position: relative;
-        }
-
-        .cli-prompt {
-          font-weight: bold;
-          color: #0f0;
-          text-shadow: 0 0 5px #0f0;
-          font-size: 0.9rem;
-        }
-
-        .input-wrapper {
-          display: flex;
-          align-items: center;
-          border: 1px solid #111;
-          background: rgba(0, 20, 0, 0.5);
-          padding: 0.8rem;
-          box-shadow: inset 0 0 10px #000;
-        }
-
-        .cli-input {
-          background: transparent;
-          border: none;
-          outline: none;
-          color: #0f0;
-          font-family: 'Courier New', Courier, monospace;
-          font-size: 1.1rem;
-          width: 100%;
-          caret-color: transparent;
-        }
-
-        .blinking-cursor {
-          color: #0f0;
-          animation: blink 1s step-end infinite;
-          font-size: 1.1rem;
-          text-shadow: 0 0 5px #0f0;
-        }
-
-        @keyframes blink {
-          50% { opacity: 0; }
-        }
-        
-        .glitch-button {
-          padding: 1rem;
-          background: transparent;
-          color: #0f0;
-          border: 1px solid #0f0;
-          font-weight: bold;
-          cursor: pointer;
-          position: relative;
-          text-transform: uppercase;
-          transition: all 0.2s ease;
-          letter-spacing: 2px;
-          font-family: inherit;
-        }
-
-        .glitch-button:hover:not(:disabled) {
-          background: rgba(0, 255, 0, 0.1);
-          box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
-          text-shadow: 0 0 8px #0f0;
-        }
-
-        .glitch-button:disabled {
-          border-color: #003300;
-          color: #003300;
-          cursor: wait;
-        }
-
-        /* System Alert Styling */
-        .system-alert {
-          margin-top: 2rem;
-          border-left: 5px solid #f00;
-          background: rgba(50, 0, 0, 0.3);
-          padding: 1.5rem;
-          position: relative;
-          z-index: 5;
-          animation: alert-entry 0.3s ease-out;
-          border: 1px solid rgba(255, 0, 0, 0.3);
-        }
-
-        @keyframes alert-entry {
-          from { transform: translateX(-20px); opacity: 0; }
-          to { transform: translateX(0); opacity: 1; }
-        }
-
-        .alert-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          color: #f00;
-          font-weight: bold;
-          font-size: 0.8rem;
-          margin-bottom: 1rem;
-          border-bottom: 1px solid rgba(255, 0, 0, 0.2);
-          padding-bottom: 0.5rem;
-        }
-
-        .alert-icon {
-          font-size: 1.2rem;
-          animation: pulse 1s infinite;
-        }
-
-        .alert-body {
-          color: #ff9999;
-          font-style: italic;
-          line-height: 1.6;
-        }
-
-        /* Glitch Text Effect */
-        .glitch-text {
-          position: relative;
-        }
-        
-        .hint-text {
-          margin-top: 1rem;
-          font-size: 0.75rem;
-          color: #ff6666;
-          opacity: 0.7;
-          border-top: 1px dashed rgba(255, 0, 0, 0.2);
-          padding-top: 0.5rem;
-        }
-
-        /* Roast Output Styling */
-        .roast-output {
-          margin-top: 2.5rem;
-          padding-top: 1rem;
-          z-index: 3;
-          position: relative;
-        }
-
-        .report-header {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-          margin-bottom: 1.5rem;
-        }
-
-        .report-header .line {
-          flex: 1;
-          height: 1px;
-          background: #0f0;
-          opacity: 0.3;
-        }
-
-        .report-header h3 {
-          color: #0f0;
-          font-size: 0.9rem;
-          letter-spacing: 3px;
-          margin: 0;
-          text-shadow: 0 0 10px #0f0;
-        }
-
-        .roast-text {
-          font-style: italic;
-          line-height: 1.6;
-          color: #fff;
-          font-size: 1.1rem;
-          margin-bottom: 2rem;
-          text-shadow: 0 0 2px rgba(255, 255, 255, 0.5);
-        }
-
-        .score-container {
-          display: flex;
-          flex-direction: column;
-          gap: 0.5rem;
-        }
-
-        .score-label {
-          color: #0f0;
-          font-size: 0.8rem;
-          font-weight: bold;
-        }
-
-        .score-value {
-          font-size: 2.5rem;
-          font-weight: 900;
-          color: #f00;
-          text-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
-          line-height: 1;
-        }
-
-        .score-bar {
-          height: 4px;
-          background: #111;
-          width: 100%;
-          margin-top: 0.5rem;
-          position: relative;
-        }
-
-        .score-fill {
-          height: 100%;
-          background: #f00;
-          box-shadow: 0 0 10px #f00;
-          transition: width 1s ease-out;
-        }
-
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
-        }
-
-        .fade-in {
-          animation: fadeIn 0.8s ease-in;
-        }
-
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-      `}</style>
+                  {error && (
+                    <div className="error-box">
+                      <p>» ERROR: {error}</p>
+                      <p>SYSTEM_STABILITY: CRITICAL</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="result-wrapper">
+                <div className="result-box">
+                  <div className="result-header">
+                    <div className="recording">rec</div>
+                    <h2>DESTRUCTION_DASHBOARD</h2>
+                    <button onClick={() => setView('input')}>REBOOT_SYSTEM</button>
+                  </div>
+                  <div className="result-body">
+                    <div className="roast-display">
+                      <div className="header-label">TRANSCRIPTION_OF_SHAME</div>
+                      <div className="roast-text">
+                        "{roastData.roast}"
+                      </div>
+                    </div>
+                    <div className="stats-display">
+                      <div className="stat">
+                        <div>LAMENESS_PERCENTAGE</div>
+                        <div className="stat-value">{roastData.score}%</div>
+                        <div className="stat-bar">
+                          <div className="stat-fill" style={{ width: `${roastData.score}%` }}></div>
+                        </div>
+                      </div>
+                      <div className="stat">
+                        <div>AI_BRAIN_DAMAGE</div>
+                        <div className="stat-value">CRITICAL</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="data-stream">
+                    DATA_STREAM: [INFO] FETCHING REPO CONTENT... [SUCCESS] PARSING CODE... [WARN] LAME CODE DETECTED... [CRITICAL] GENAI OVERLOAD... [DONE] ROAST GENERATED
+                  </div>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

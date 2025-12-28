@@ -1,0 +1,426 @@
+/* =========================
+   ROOT + GLOBAL
+========================= */
+:root {
+    /* Core palette */
+    --bg-main: #0a0414;
+    /* darkest purple */
+    --bg-card: #0d1b2e;
+    /* dark blue cards */
+    --bg-input: #0d1b2e;
+    /* SAME as card */
+
+    --accent-blue: #5ecbff;
+    /* clean light blue */
+    --accent-blue-soft: #9be3ff;
+
+    --danger-red: #ff4d6d;
+
+    /* Text */
+    --text-main: #e6f1ff;
+    --text-muted: #9bb0cc;
+
+    /* Glow */
+    --glow-blue: 0 0 20px rgba(94, 203, 255, 0.45);
+}
+
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: radial-gradient(circle at top,
+            #140a2a 0%,
+            var(--bg-main) 60%);
+    color: var(--text-main);
+    overflow-x: hidden;
+}
+
+/* =========================
+   MAIN CONTAINER
+========================= */
+.roast-container {
+    position: relative;
+    width: 100%;
+    max-width: 720px;
+    padding: 2.5rem;
+    margin: 0 auto;
+
+    background: linear-gradient(180deg,
+            #0f2440 0%,
+            var(--bg-card) 100%);
+
+    border-radius: 18px;
+    box-shadow:
+        0 30px 80px rgba(0, 0, 0, 0.6),
+        inset 0 0 0 1px rgba(94, 203, 255, 0.08);
+
+    font-family: 'Courier New', monospace;
+}
+
+
+.roast-container::before {
+    content: "";
+    position: absolute;
+    inset: -2px;
+    border-radius: 16px;
+    background: linear-gradient(120deg,
+            rgba(0, 255, 255, 0.15),
+            rgba(0, 191, 255, 0.05),
+            transparent);
+    z-index: -1;
+}
+
+/* =========================
+   GLITCH OVERLAY (ACTIVE DURING LOADING)
+========================= */
+.roast-container.loading::before,
+.roast-container.loading::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: inherit;
+    z-index: 999;
+    mix-blend-mode: screen;
+    pointer-events: none;
+}
+
+.roast-container.loading::before {
+    animation: glitchShift 0.15s infinite linear;
+    filter: hue-rotate(30deg);
+    opacity: 0.4;
+}
+
+.roast-container.loading::after {
+    animation: glitchShift2 0.12s infinite linear;
+    filter: hue-rotate(-40deg);
+    opacity: 0.25;
+}
+
+@keyframes glitchShift {
+    0% {
+        transform: translate(0);
+    }
+
+    25% {
+        transform: translate(-3px, 2px);
+    }
+
+    50% {
+        transform: translate(3px, -2px);
+    }
+
+    75% {
+        transform: translate(-2px, -1px);
+    }
+
+    100% {
+        transform: translate(0);
+    }
+}
+
+@keyframes glitchShift2 {
+    0% {
+        transform: translate(0);
+    }
+
+    20% {
+        transform: translate(2px, -3px);
+    }
+
+    40% {
+        transform: translate(-3px, 2px);
+    }
+
+    60% {
+        transform: translate(3px, 1px);
+    }
+
+    80% {
+        transform: translate(-1px, -2px);
+    }
+
+    100% {
+        transform: translate(0);
+    }
+}
+
+/* =========================
+   SCANLINES + NOISE
+========================= */
+.noise-canvas {
+    position: absolute;
+    inset: 0;
+    background-image:
+        repeating-linear-gradient(to bottom,
+            rgba(255, 255, 255, 0.02),
+            rgba(255, 255, 255, 0.02) 1px,
+            transparent 1px,
+            transparent 3px);
+    animation: scanlines 0.2s linear infinite;
+    pointer-events: none;
+}
+
+@keyframes scanlines {
+    from {
+        background-position: 0 0;
+    }
+
+    to {
+        background-position: 0 4px;
+    }
+}
+
+/* =========================
+   LOADING OVERLAY
+========================= */
+.loading-overlay {
+    position: absolute;
+    inset: 0;
+    border-radius: 14px;
+    background: rgba(5, 10, 20, 0.92);
+    z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(4px);
+}
+
+.brain-melting-center {
+    text-align: center;
+    animation: flicker 1.5s infinite;
+}
+
+@keyframes flicker {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.85;
+    }
+}
+
+/* =========================
+   LOADING TEXT
+========================= */
+.overload-text {
+    font-size: 2rem;
+    color: var(--neon-cyan);
+    text-shadow:
+        0 0 10px var(--neon-blue),
+        0 0 30px var(--neon-blue);
+    animation: pulseGlow 1s infinite;
+}
+
+@keyframes pulseGlow {
+
+    0%,
+    100% {
+        text-shadow: 0 0 10px var(--neon-blue);
+    }
+
+    50% {
+        text-shadow: 0 0 25px var(--neon-cyan);
+    }
+}
+
+.symptoms {
+    margin-top: 15px;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 15px;
+    border: 1px solid var(--neon-blue);
+    border-radius: 8px;
+    text-align: left;
+    font-size: 0.85rem;
+}
+
+/* =========================
+   LOADING BAR
+========================= */
+.loading-bar {
+    width: 220px;
+    height: 10px;
+    margin: 20px auto 0;
+    background: #001a33;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.loading-fill {
+    width: 40%;
+    height: 100%;
+    background: linear-gradient(90deg,
+            transparent,
+            var(--neon-blue),
+            transparent);
+    animation: loadingGlitch 0.8s infinite;
+}
+
+@keyframes loadingGlitch {
+    from {
+        transform: translateX(-100%);
+    }
+
+    to {
+        transform: translateX(300%);
+    }
+}
+
+/* =========================
+   TERMINAL BOX
+========================= */
+.terminal-box {
+    background: var(--bg-card);
+    border-radius: 14px;
+    padding: 28px;
+
+    box-shadow:
+        inset 0 0 0 1px rgba(94, 203, 255, 0.08),
+        0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+
+@keyframes terminalBoot {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* =========================
+   INPUT
+========================= */
+.input-row input {
+    width: 100%;
+    background: var(--bg-input);
+    border: 1px solid rgba(94, 203, 255, 0.2);
+    color: var(--text-main);
+
+    padding: 14px 16px;
+    border-radius: 10px;
+
+    font-size: 0.95rem;
+}
+
+.input-row input::placeholder {
+    color: var(--text-muted);
+}
+
+.input-row input:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+    box-shadow: var(--glow-blue);
+}
+
+
+/* =========================
+   BUTTON
+========================= */
+button {
+    width: 100%;
+    margin-top: 1.2rem;
+
+    background: linear-gradient(135deg,
+            var(--accent-blue),
+            var(--accent-blue-soft));
+
+    border: none;
+    border-radius: 12px;
+
+    padding: 16px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: #04131f;
+
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 30px rgba(94, 203, 255, 0.6);
+}
+
+button:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+
+/* =========================
+   ERROR
+========================= */
+.error-box {
+    margin-top: 15px;
+    border: 1px solid var(--danger-red);
+    color: var(--danger-red);
+    padding: 10px;
+    background: rgba(50, 0, 0, 0.6);
+    border-radius: 6px;
+}
+
+/* =========================
+   RESULT VIEW
+========================= */
+.result-box {
+    margin-top: 1.5rem;
+    animation: resultReveal 0.4s ease-out;
+}
+
+@keyframes resultReveal {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.roast-text {
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: var(--text-main);
+}
+
+/* =====================
+   RGB GLITCH TEXT
+===================== */
+.glitch-text {
+    position: relative;
+    color: #00eaff;
+}
+
+.glitch-text::before,
+.glitch-text::after {
+    content: attr(data-text);
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    opacity: 0.7;
+}
+
+.glitch-text::before {
+    color: #ff0055;
+    transform: translate(-2px, 0);
+    clip-path: inset(0 0 50% 0);
+}
+
+.glitch-text::after {
+    color: #00ff99;
+    transform: translate(2px, 0);
+    clip-path: inset(50% 0 0 0);
+}
