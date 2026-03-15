@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import './styles/RoastForm.css';
 import './styles/shared.css';
@@ -13,6 +13,20 @@ const RoastForm = () => {
   const [roastData, setRoastData] = useState(null);
   const [error, setError] = useState(null);
   const [view, setView] = useState('input');
+
+  // Wake up backend on mount
+  useEffect(() => {
+    const wakeupBackend = async () => {
+      try {
+        const apiUrl = import.meta.env.PROD ? '' : 'http://127.0.0.1:8001';
+        console.log("DEBUG: WAKING_UP_CORE...");
+        await fetch(`${apiUrl}/`);
+      } catch (e) {
+        console.log("BACKEND_WAKEUP_FAILED:", e);
+      }
+    };
+    wakeupBackend();
+  }, []);
 
   // Audio refs
   const bgAudioRef = useRef(null);

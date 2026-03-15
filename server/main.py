@@ -42,6 +42,11 @@ async def log_requests(request, call_next):
     log_to_file(f"DEBUG: OUTGOING: {response.status_code}")
     return response
 
+@app.get("/")
+async def root():
+    log_to_file("DEBUG: ROOT_PING_RECEIVED")
+    return {"status": "WAKING_UP", "system": "GIT_ROAST_CORE"}
+
 # Configure Gemini AI
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 if not GEMINI_API_KEY:
