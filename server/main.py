@@ -42,7 +42,7 @@ async def log_requests(request, call_next):
     log_to_file(f"DEBUG: OUTGOING: {response.status_code}")
     return response
 
-@app.get("/")
+@app.get("/api/health")
 async def root():
     log_to_file("DEBUG: ROOT_PING_RECEIVED")
     return {"status": "WAKING_UP", "system": "GIT_ROAST_CORE"}
@@ -242,6 +242,10 @@ async def favicon():
 
 # 3. Catch-All Route for SPA (Single Page Application)
 # This ensures that if you refresh the page, it serves index.html instead of 404
+@app.get("/")
+async def serve_root():
+    return FileResponse(client_dist / "index.html")
+
 @app.get("/{full_path:path}")
 async def serve_spa(full_path: str):
     # Check if file exists in dist (e.g., audio files)
