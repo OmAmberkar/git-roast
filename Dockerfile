@@ -1,35 +1,18 @@
-# Stage 1 : Frontend Build
-FROM node:18-alpine AS frontend-builder
+FROM node:20-slim
 
-WORKDIR /app/client
-
-# Install dependencies
-COPY client/package*.json ./
-RUN npm install
-
-# Building app
-COPY client/ ./
-RUN npm run build
-
-# Stage 2 : Backend Setup
-FROM python:3.11-slim AS backend-builder
+RUN apt-get update && apt-get install -y python3 python3-pip
 
 WORKDIR /app
 
-# Install dependencies
-COPY server/requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
 
-# Copy app
-COPY server/ ./server
+WORKDIR /app/client
+RUN npm install
+RUN npm run build
 
+WORKDIR /app/server
+RUN pip install --no-cache-dir --break-system-packages -r requirements.txt
 
-# Stage 3 : Final Setup
-# Copy the built frontend artifacts from Stage 1 into the backend container
-COPY --from=frontend-builder /app/client/dist ./client/dist
+WORKDIR /app
 
-#set environment variables
-ENV PORT=8080
-
-# Run server
-CMD ["python", "server/main.py"]
+CMD ["python3", "server/main.py"]
